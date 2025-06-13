@@ -47,13 +47,12 @@ local function zoomDecrement()
     end
 end
 
--- Décrémente le zoom
-RegisterCommand('+duckJumelleZoomDecrement', zoomDecrement)
-RegisterCommand('+duckJumelleZoomIncrement', zoomIncrement)
+RegisterCommand('+duckJumellesZoomDecrement', zoomDecrement)
+RegisterCommand('+duckJumellesZoomIncrement', zoomIncrement)
 RegisterCommand('+duckJumellesExit', exitJumelles)
 -- KeyMappings pour binder les touches A/E
-RegisterKeyMapping('+duckJumelleZoomIncrement', 'Jumelles Zoom +', 'keyboard', 'Q')
-RegisterKeyMapping('+duckJumelleZoomDecrement', 'Jumelles Zoom -', 'keyboard', 'E')
+RegisterKeyMapping('+duckJumellesZoomIncrement', 'Jumelles Zoom +', 'keyboard', 'Q')
+RegisterKeyMapping('+duckJumellesZoomDecrement', 'Jumelles Zoom -', 'keyboard', 'E')
 RegisterKeyMapping('+duckJumellesExit', 'Quitter Jumelles', 'keyboard', 'A')
 
 
