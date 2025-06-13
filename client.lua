@@ -112,8 +112,6 @@ Citizen.CreateThread(function()
                         SetCamRot(_cam, rx, 0.0, rz, 2)
                     end
 
-                    HideHelpTextThisFrame()
-                    for i = 1, 20 do HideHudComponentThisFrame(i) end
                     DrawScaleformMovieFullscreen(_scaleform, 255, 255, 255, 255)
             end
 
