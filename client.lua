@@ -3,6 +3,7 @@ local fov_min = 7.0    -- max zoom (plus petit = plus fort zoom)
 local zoomspeed = 10.0 -- vitesse de zoom
 local speed_lr = 8.0   -- rotation gauche/droite
 local speed_ud = 8.0   -- rotation haut/bas
+local zoomstep = 5.0
 
 local toggle_helicam    = 51  -- INPUT_CONTEXT (E)
 local toggle_rappel    = 154  -- INPUT_DUCK (X)
@@ -20,36 +21,66 @@ local _scaleform   = nil
 local _cam         = nil
 local _heliEntity  = nil
 
+local function exitJumelles()
+    local ped = PlayerPedId()
+
+    -- joue le son de fermeture
+    PlaySoundFrontend(-1, "SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET", false)
+    -- enlève l’animation
+    ClearPedTasks(ped)
+    -- passe le flag à false pour déclencher le cleanup
+    helicam = false
+end
+
+-- Incrémente le zoom
+RegisterCommand('+duckJumelleZoomIncrement', function()
+    if helicam and _cam then
+        fov = math.max(fov_min, fov - zoomstep)
+        SetCamFov(_cam, fov)
+    end
+end)
+
+-- Décrémente le zoom
+RegisterCommand('+duckJumelleZoomDecrement', function()
+    if helicam and _cam then
+        fov = math.min(fov_max, fov + zoomstep)
+        SetCamFov(_cam, fov)
+    end
+end)
+RegisterCommand('duckJumellesExit', exitJumelles)
+-- KeyMappings pour binder les touches A/E
+RegisterKeyMapping('+duckJumelleZoomIncrement', 'Jumelles Zoom +', 'keyboard', 'A')
+RegisterKeyMapping('+duckJumelleZoomDecrement', 'Jumelles Zoom -', 'keyboard', 'E')
+RegisterKeyMapping('+duckJumellesExit', 'Quitter Jumelles', 'keyboard', 'BACKSPACE')
+
+
 Citizen.CreateThread(function()
     while true do
         if helicam then
-            -- ## INITIALISATION (une seule fois)
+            ------------------------------------------------------------
+            -- INIT (une seule fois)
+            ------------------------------------------------------------
             if not _heliInit then
                 local ped = PlayerPedId()
                 _heliEntity = GetVehiclePedIsIn(ped, false)
 
-                -- animation & son
                 TaskStartScenarioInPlace(ped, "WORLD_HUMAN_BINOCULARS", 0, true)
                 PlayAmbientSpeech1(ped, "GENERIC_CURSE_MED", "SPEECH_PARAMS_FORCE")
 
-                -- filtre visuel
                 SetTimecycleModifier("heliGunCam")
                 SetTimecycleModifierStrength(0.3)
 
-                -- scaleform
                 _scaleform = RequestScaleformMovie("BINOCULARS")
                 while not HasScaleformMovieLoaded(_scaleform) do
                     Citizen.Wait(0)
                 end
 
-                -- création caméra
                 _cam = CreateCam("DEFAULT_SCRIPTED_FLY_CAMERA", true)
                 AttachCamToEntity(_cam, ped, 0.0, 0.0, 1.0, true)
                 SetCamRot(_cam, 0.0, 0.0, GetEntityHeading(ped))
                 SetCamFov(_cam, fov)
                 RenderScriptCams(true, false, 0, true)
 
-                -- logo jumelles
                 PushScaleformMovieFunction(_scaleform, "SET_CAM_LOGO")
                 PushScaleformMovieFunctionParameterInt(0)
                 PopScaleformMovieFunctionVoid()
@@ -57,43 +88,44 @@ Citizen.CreateThread(function()
                 _heliInit = true
             end
 
-            -- ## BOUCLE ACTIVE
+            ------------------------------------------------------------
+            -- BOUCLE ACTIVE
+            ------------------------------------------------------------
             local ped = PlayerPedId()
             local veh = GetVehiclePedIsIn(ped, false)
 
-            -- arrêt automatique si mort ou sortie du véhicule
+            -- arrêt auto si mort ou sortie
             if IsEntityDead(ped) or veh ~= _heliEntity then
-                helicam = false
+                exitJumelles()
             else
-                -- sortie manuelle (touche “croix”)
-                if IsControlJustPressed(0, 177) then
-                    PlaySoundFrontend(-1, "SELECT", "HUD_FRONTEND_DEFAULT_SOUNDSET", false)
-                    ClearPedTasks(ped)
-                    helicam = false
-                else
-                    -- rotation, zoom, affichage
+                    -- rotation uniquement (le zoom est géré ailleurs)
                     local zoomNorm = (fov - fov_min) / (fov_max - fov_min)
-                    CheckInputRotation(_cam, zoomNorm)
-                    HandleZoom(_cam)
-                    HideHUDThisFrame()
+                    local rx, ry, rz = table.unpack(GetCamRot(_cam, 2))
+                    local ax = GetDisabledControlNormal(0, 220)
+                    local ay = GetDisabledControlNormal(0, 221)
+                    if ax ~= 0.0 or ay ~= 0.0 then
+                        rz = rz - ax * speed_ud * (zoomNorm + 0.1)
+                        rx = math.max(math.min(20.0, rx - ay * speed_lr * (zoomNorm + 0.1)), -89.5)
+                        SetCamRot(_cam, rx, 0.0, rz, 2)
+                    end
+
+                    HideHelpTextThisFrame()
+                    for i = 1, 20 do HideHudComponentThisFrame(i) end
                     DrawScaleformMovieFullscreen(_scaleform, 255, 255, 255, 255)
-                end
             end
 
-            Citizen.Wait(0)  -- réactif quand actif
+            Citizen.Wait(0)  -- loop rapide quand actif
 
         else
-            -- ## CLEANUP (une seule fois)
+            ------------------------------------------------------------
+            -- CLEANUP (une seule fois)
+            ------------------------------------------------------------
             if _heliInit then
-                -- retour à la caméra jeu
                 RenderScriptCams(false, false, 0, true)
-
-                -- supprime filtres et visions
                 ClearTimecycleModifier()
                 SetNightvision(false)
                 SetSeethrough(false)
 
-                -- détruit la caméra scriptée et la scaleform
                 if _cam then
                     DestroyCam(_cam, false)
                     _cam = nil
@@ -103,15 +135,12 @@ Citizen.CreateThread(function()
                     _scaleform = nil
                 end
 
-                -- remet la posture du joueur
                 ClearPedTasks(PlayerPedId())
-
-                -- reset zoom & état
                 fov = (fov_max + fov_min) * 0.5
                 _heliInit = false
             end
 
-            Citizen.Wait(500)  -- faible charge CPU quand inactif
+            Citizen.Wait(500)  -- loop lente quand inactif
         end
     end
 end)
