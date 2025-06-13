@@ -1,51 +1,71 @@
+-- commandes de zoom
+local zoomLevel = 60         -- FOV initial
+local zoomStep  = 5          -- pas de zoom
+local zoomMin   = 15         -- FOV max (fort zoom)
+local zoomMax   = 60         -- FOV min (zoom arrière)
+
 RegisterCommand('+duckJumelleZoomIncrement', function()
-	
-end)
-RegisterCommand('+duckJumelleZoomDecrement', function()
-	
+    if currentVision then
+        zoomLevel = math.max(zoomMin, zoomLevel - zoomStep)
+        SetGameplayCamRawFov(zoomLevel)
+    end
 end)
 
-RegisterKeyMapping('+duckJumelleZoomIncrement', 'Jumelles Zoom+', 'keyboard', 'A')
-RegisterKeyMapping('+duckJumelleZoomDecrement', 'Jumelles Zoom-', 'keyboard', 'E')
+RegisterCommand('+duckJumelleZoomDecrement', function()
+    if currentVision then
+        zoomLevel = math.min(zoomMax, zoomLevel + zoomStep)
+        SetGameplayCamRawFov(zoomLevel)
+    end
+end)
+
+RegisterCommand('+duckJumelleEnableNormal', function()
+	setVision('normal')
+end)
+
+RegisterCommand('+duckJumelleEnableNight', function()
+	setVision('night')
+end)
+
+RegisterCommand('+duckJumelleEnableThermal', function()
+	setVision('thermal')
+end)
+
+RegisterKeyMapping('+duckJumelleZoomIncrement', 'Jumelles Zoom +', 'keyboard', 'A')
+RegisterKeyMapping('+duckJumelleZoomDecrement', 'Jumelles Zoom -', 'keyboard', 'E')
 
 local currentVision = nil
 
--- Configuration des différents modes de vision
 local visionSettings = {
-    normal = { nightvision = false, seethrough = false },
-    night  = { nightvision = true,  seethrough = false },
+    normal  = { nightvision = false, seethrough = false },
+    night   = { nightvision = true,  seethrough = false },
     thermal = { nightvision = true,  seethrough = true },
 }
 
-local thermal = false
-local night = false
-local normal = false
-local helicam = false
-RegisterNetEvent('duck:jumelles:active')
-AddEventHandler('duck:jumelles:active', function(vision)
-    local settings = visionSettings[vision]
+local function setVision(vision)
+    local s = visionSettings[vision]
+    if not s then return end
 
-    -- Si le mode demandé n'existe pas, on sort
-    if not settings then return end
-
-    -- Si on demande le même mode que celui actif, on désactive tout
     if currentVision == vision then
         SetNightvision(false)
         SetSeethrough(false)
+        SetGameplayCamRawFov(zoomMax)
         currentVision = nil
         return
     end
 
-    -- Sinon, on change de mode : on désactive d'abord l'ancien
     if currentVision then
         SetNightvision(false)
         SetSeethrough(false)
     end
 
     Wait(100)
-
-    SetNightvision(settings.nightvision)
-    SetSeethrough(settings.seethrough)
+    SetNightvision(s.nightvision)
+    SetSeethrough(s.seethrough)
     currentVision = vision
-    Wait(100)
-end)
+
+    zoomLevel = zoomMax
+    SetGameplayCamRawFov(zoomLevel)
+end
+
+RegisterNetEvent('duck:jumelles:active')
+AddEventHandler('duck:jumelles:active', setVision)
