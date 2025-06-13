@@ -22,6 +22,7 @@ local _cam         = nil
 local _heliEntity  = nil
 
 local function exitJumelles()
+     if helicam and _cam then
     local ped = PlayerPedId()
 
     -- joue le son de fermeture
@@ -30,6 +31,7 @@ local function exitJumelles()
     ClearPedTasks(ped)
     -- passe le flag à false pour déclencher le cleanup
     helicam = false
+        end
 end
 
 -- Incrémente le zoom
@@ -47,11 +49,11 @@ RegisterCommand('+duckJumelleZoomDecrement', function()
         SetCamFov(_cam, fov)
     end
 end)
-RegisterCommand('duckJumellesExit', exitJumelles)
+RegisterCommand('+duckJumellesExit', exitJumelles)
 -- KeyMappings pour binder les touches A/E
-RegisterKeyMapping('+duckJumelleZoomIncrement', 'Jumelles Zoom +', 'keyboard', 'A')
+RegisterKeyMapping('+duckJumelleZoomIncrement', 'Jumelles Zoom +', 'keyboard', 'Q')
 RegisterKeyMapping('+duckJumelleZoomDecrement', 'Jumelles Zoom -', 'keyboard', 'E')
-RegisterKeyMapping('+duckJumellesExit', 'Quitter Jumelles', 'keyboard', 'BACKSPACE')
+RegisterKeyMapping('+duckJumellesExit', 'Quitter Jumelles', 'keyboard', 'A')
 
 
 Citizen.CreateThread(function()
@@ -114,7 +116,7 @@ Citizen.CreateThread(function()
                     DrawScaleformMovieFullscreen(_scaleform, 255, 255, 255, 255)
             end
 
-            Citizen.Wait(0)  -- loop rapide quand actif
+            Citizen.Wait(1)  -- loop rapide quand actif
 
         else
             ------------------------------------------------------------
