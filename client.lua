@@ -15,6 +15,13 @@ local visionSettings = {
     thermal = { nightvision = true,  seethrough = true },
 }
 
+local function SetGameplayCamRawFov(newFov)
+    local rc = GetRenderingCam()
+    if rc and DoesCamExist(rc) then
+        SetCamFov(rc, newFov)
+    end
+end
+
 local function setVision(vision)
     local s = visionSettings[vision]
     if not s then return end
