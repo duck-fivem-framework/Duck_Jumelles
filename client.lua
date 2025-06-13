@@ -1,7 +1,7 @@
 -- commandes de zoom
 local zoomLevel = 60         -- FOV initial
 local zoomStep  = 5          -- pas de zoom
-local zoomMin   = 15         -- FOV max (fort zoom)
+local zoomMin   = 5         -- FOV max (fort zoom)
 local zoomMax   = 60         -- FOV min (zoom arrière)
 
 RegisterCommand('+duckJumelleZoomIncrement', function()
