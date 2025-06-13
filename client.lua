@@ -7,7 +7,7 @@ local zoomstep = 5.0
 
 local helicam = false
 local fov = (fov_max + fov_min) * 0.5
-local vision_state = 0  -- 0=normal, 1=nightmode, 2=thermal
+local vision_state = 0  -- 0=normal 
 
 -- état interne pour l’init/cleanup
 local _heliInit    = false
