@@ -34,9 +34,7 @@ local function exitJumelles()
         ClearPedTasks(PlayerPedId())
         fov = (fov_max + fov_min) * 0.5
         _heliInit = false
-    end
 
-    if helicam and _cam then
         local ped = PlayerPedId()
 
         -- joue le son de fermeture
@@ -45,7 +43,10 @@ local function exitJumelles()
         ClearPedTasks(ped)
         -- passe le flag à false pour déclencher le cleanup
         helicam = false
+
     end
+    -- SendNUIMessage({action = 'close'}) -- Si on souhaite utiliser un NUI a la place de DrawScaleformMovieFullscreen(_scaleform, 255, 255, 255, 255) mais faut faire du CSS
+
 end
 
 -- Incrémente le zoom
@@ -136,11 +137,11 @@ local function setVision(vision)
     PopScaleformMovieFunctionVoid()
 
     _heliInit = true
-end
+    
+    -- SendNUIMessage({action = 'open'}) -- Si on souhaite utiliser un NUI a la place de DrawScaleformMovieFullscreen(_scaleform, 255, 255, 255, 255) mais faut faire du CSS
 
-Citizen.CreateThread(function()
-    while true do
-        if helicam then
+    Citizen.CreateThread(function()
+        while helicam do
             ------------------------------------------------------------
             -- BOUCLE ACTIVE
             ------------------------------------------------------------
@@ -161,17 +162,14 @@ Citizen.CreateThread(function()
                         rx = math.max(math.min(20.0, rx - ay * speed_lr * (zoomNorm + 0.1)), -89.5)
                         SetCamRot(_cam, rx, 0.0, rz, 2)
                     end
-
-                    DrawScaleformMovieFullscreen(_scaleform, 255, 255, 255, 255)
+					DrawScaleformMovieFullscreen(_scaleform, 255, 255, 255, 255)
             end
-
             Citizen.Wait(0)
-
-        else
-            Citizen.Wait(500)
         end
-    end
-end)
+    end)
+end
+
+
 
 
 -- ON ÉCOUTE L’ÉVÉNEMENT POUR CHANGER DE VISION
