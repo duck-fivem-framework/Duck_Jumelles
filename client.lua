@@ -44,7 +44,7 @@ local function exitJumelles()
         helicam = false
     end
 
-    SendNUIMessage({action = 'close'})
+    -- SendNUIMessage({action = 'close'}) -- Si je trouve une solution pour passer le scaleform en NUI
 
 end
 
@@ -150,7 +150,7 @@ local function setVision(vision)
 
     _heliInit = true
     
-    SendNUIMessage({action = 'open'})
+    -- SendNUIMessage({action = 'open'}) -- Si je trouve une solution pour passer le scaleform en NUI
 
     Citizen.CreateThread(function()
         while helicam do
@@ -159,7 +159,7 @@ local function setVision(vision)
             ------------------------------------------------------------
             local ped = PlayerPedId()
 
-            -- arrêt auto si mort ou sortie
+            -- arrêt auto si mort
             if IsEntityDead(ped) then
                 exitJumelles()
             else
