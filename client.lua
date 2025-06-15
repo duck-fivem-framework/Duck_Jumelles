@@ -13,7 +13,6 @@ local vision_state = 0  -- 0=normal, 1=nightmode, 2=thermal
 local _heliInit    = false
 local _scaleform   = nil
 local _cam         = nil
-local _heliEntity  = nil
 
 local function exitJumelles()
     if _heliInit then
@@ -43,9 +42,9 @@ local function exitJumelles()
         ClearPedTasks(ped)
         -- passe le flag à false pour déclencher le cleanup
         helicam = false
-
     end
-    -- SendNUIMessage({action = 'close'}) -- Si on souhaite utiliser un NUI a la place de DrawScaleformMovieFullscreen(_scaleform, 255, 255, 255, 255) mais faut faire du CSS
+
+    SendNUIMessage({action = 'close'})
 
 end
 
@@ -84,6 +83,20 @@ local visionSettings = {
     thermal = { nightvision = true,  seethrough = true },
 }
 
+local function checkRotation()
+    if helicam and _cam then
+        local zoomNorm = (fov - fov_min) / (fov_max - fov_min)
+        local rx, ry, rz = table.unpack(GetCamRot(_cam, 2))
+        local ax = GetDisabledControlNormal(0, 220)
+        local ay = GetDisabledControlNormal(0, 221)
+        if ax ~= 0.0 or ay ~= 0.0 then
+            rz = rz - ax * speed_ud * (zoomNorm + 0.1)
+            rx = math.max(math.min(20.0, rx - ay * speed_lr * (zoomNorm + 0.1)), -89.5)
+            SetCamRot(_cam, rx, 0.0, rz, 2)
+        end
+    end
+end
+
 -- FONCTION GÉNÉRIQUE DE SWITCH DE VISION
 local function setVision(vision)
     -- si vision invalide, on désactive tout
@@ -113,7 +126,6 @@ local function setVision(vision)
     
 
     local ped = PlayerPedId()
-    _heliEntity = GetVehiclePedIsIn(ped, false)
 
     TaskStartScenarioInPlace(ped, "WORLD_HUMAN_BINOCULARS", 0, true)
     PlayAmbientSpeech1(ped, "GENERIC_CURSE_MED", "SPEECH_PARAMS_FORCE")
@@ -138,7 +150,7 @@ local function setVision(vision)
 
     _heliInit = true
     
-    -- SendNUIMessage({action = 'open'}) -- Si on souhaite utiliser un NUI a la place de DrawScaleformMovieFullscreen(_scaleform, 255, 255, 255, 255) mais faut faire du CSS
+    SendNUIMessage({action = 'open'})
 
     Citizen.CreateThread(function()
         while helicam do
@@ -146,30 +158,20 @@ local function setVision(vision)
             -- BOUCLE ACTIVE
             ------------------------------------------------------------
             local ped = PlayerPedId()
-            local veh = GetVehiclePedIsIn(ped, false)
 
             -- arrêt auto si mort ou sortie
-            if IsEntityDead(ped) or veh ~= _heliEntity then
+            if IsEntityDead(ped) then
                 exitJumelles()
             else
-                    -- rotation uniquement (le zoom est géré ailleurs)
-                    local zoomNorm = (fov - fov_min) / (fov_max - fov_min)
-                    local rx, ry, rz = table.unpack(GetCamRot(_cam, 2))
-                    local ax = GetDisabledControlNormal(0, 220)
-                    local ay = GetDisabledControlNormal(0, 221)
-                    if ax ~= 0.0 or ay ~= 0.0 then
-                        rz = rz - ax * speed_ud * (zoomNorm + 0.1)
-                        rx = math.max(math.min(20.0, rx - ay * speed_lr * (zoomNorm + 0.1)), -89.5)
-                        SetCamRot(_cam, rx, 0.0, rz, 2)
-                    end
-					DrawScaleformMovieFullscreen(_scaleform, 255, 255, 255, 255)
+                -- rotation uniquement (le zoom est géré ailleurs)
+                checkRotation()
+				-- display les lunettes sur le screen
+                DrawScaleformMovieFullscreen(_scaleform, 255, 255, 255, 255)
             end
             Citizen.Wait(0)
         end
     end)
 end
-
-
 
 
 -- ON ÉCOUTE L’ÉVÉNEMENT POUR CHANGER DE VISION
