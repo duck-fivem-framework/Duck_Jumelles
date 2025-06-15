@@ -97,6 +97,19 @@ local function checkRotation()
     end
 end
 
+local function DuckThreadJumelles()
+    local ped = PlayerPedId()
+
+    -- arrêt auto si mort
+    if IsEntityDead(ped) then
+        exitJumelles()
+    else
+        -- rotation uniquement (le zoom est géré ailleurs)
+        checkRotation()
+        -- display les lunettes sur le screen
+        DrawScaleformMovieFullscreen(_scaleform, 255, 255, 255, 255)
+    end
+end
 -- FONCTION GÉNÉRIQUE DE SWITCH DE VISION
 local function setVision(vision)
     -- si vision invalide, on désactive tout
@@ -154,20 +167,7 @@ local function setVision(vision)
 
     Citizen.CreateThread(function()
         while helicam do
-            ------------------------------------------------------------
-            -- BOUCLE ACTIVE
-            ------------------------------------------------------------
-            local ped = PlayerPedId()
-
-            -- arrêt auto si mort
-            if IsEntityDead(ped) then
-                exitJumelles()
-            else
-                -- rotation uniquement (le zoom est géré ailleurs)
-                checkRotation()
-				-- display les lunettes sur le screen
-                DrawScaleformMovieFullscreen(_scaleform, 255, 255, 255, 255)
-            end
+            DuckThreadJumelles()
             Citizen.Wait(0)
         end
     end)
